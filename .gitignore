@@ -1,8 +1,7 @@
 # Belső jegyzetek és Claude-beállítások – nem kerülnek a nyilvános repóba
 CLAUDE.md
 docs/
-.claude/settings.local.json
-.claude/worktrees/
+.claude/
 graphify-out/
 
 # Tesztadat (letöltött recepttartalom soha ne kerüljön a repóba)

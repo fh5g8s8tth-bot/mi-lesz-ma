@@ -16,7 +16,7 @@ Nincs build lépés, nincs külső könyvtár, nincs webfont.
 | Fájl | Szerep |
 |---|---|
 | `index.html` | Az egész app: HTML + CSS + JS |
-| `sw.js` | Service worker (`milesz-v1` cache, cache-first + háttérfrissítés; csak a saját fájlokat kezeli) |
+| `sw.js` | Service worker (`milesz-v1-1` cache, cache-first + háttérfrissítés; csak a saját fájlokat kezeli) |
 | `manifest.webmanifest` | PWA manifest |
 | `icon-180.png`, `icon-512.png` | App ikon |
 | `tools/serve.ps1` | Helyi szerver teszteléshez (alapból 8770-as port) |
@@ -30,11 +30,11 @@ Majd: http://localhost:8770/
 
 ## Telepítés (GitHub Pages)
 
-1. Új GitHub repó (pl. `milesz`), a fenti 5 fájl (`index.html`, `sw.js`, `manifest.webmanifest`, `icon-180.png`, `icon-512.png`) a gyökérbe. A `tools/` és a README nem kell hozzá.
+1. A `mi-lesz-ma` GitHub repó, a fenti 5 fájl (`index.html`, `sw.js`, `manifest.webmanifest`, `icon-180.png`, `icon-512.png`) a gyökérbe. A `tools/` és a README nem kell hozzá.
 2. Settings → Pages → Branch: `main`, mappa: `/ (root)`.
 3. iPhone-on Safariban megnyitni az oldalt → Megosztás → „Főképernyőhöz adás”.
 
-Új verziónál: a Beállítások alján lévő „Mi lesz ma? vX” felirat és a `sw.js` cache-neve (`milesz-v1` → `milesz-v2`) együtt léptetendő.
+Új verziónál: a Beállítások alján lévő „Mi lesz ma? vX” felirat és a `sw.js` cache-neve (`milesz-v1-1` → `milesz-v1-2`) együtt léptetendő.
 
 ## Adatforrás
 

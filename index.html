@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi lesz ma?">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#faf8f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<title>Mi lesz ma?</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* --tx2 kicsit sötétebb, mint v1-ben (4.3 → 5.3:1 kontraszt a papíron); --acb: a gomb alapja, fehér szöveggel mindkét módban olvasható */
+:root{--ac:#b5532f;--acb:#b5532f;--bg:#faf8f4;--tx:#1b1a17;--tx2:#6b675f;--ln:rgba(27,26,23,.16);--soft:rgba(27,26,23,.06);--sb:#1b1a17;--serif:"New York","Iowan Old Style",Georgia,"Times New Roman",serif}
+@media(prefers-color-scheme:dark){:root{--ac:#d77650;--acb:#b5532f;--bg:#151412;--tx:#f1ebdd;--tx2:#a59e92;--ln:rgba(241,235,221,.18);--soft:rgba(241,235,221,.07);--sb:#151412}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;-webkit-text-size-adjust:100%;overscroll-behavior:none;touch-action:pan-y}
+body{overflow:hidden}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+input{font:inherit;color:inherit}
+.page{position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(86px + env(safe-area-inset-bottom));display:none}
+/* oldalváltás: rövid, halk beúszás; a részletnézet jobbról érkezik. A tartalom eleve teljes fedettségű (nincs opacity-animáció), így nem tűnik halványnak */
+.page.on{display:block;animation:up .24s cubic-bezier(.2,.7,.3,1)}
+#pDet.on{animation:fromR .28s cubic-bezier(.2,.7,.3,1)}
+@keyframes up{from{transform:translateY(10px)}to{transform:none}}
+@keyframes fromR{from{transform:translateX(36px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.page.on,#pDet.on{animation:none}}
+/* státuszsáv: black-translucent módban fehér az óra/akku, ezért a papír-háttér fölé sötét sáv kell; a fotó fölött eltűnik */
+#sb{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);z-index:40;background:var(--sb);pointer-events:none;transition:opacity .2s}
+#sb.clear{opacity:0}
+.pad{max-width:560px;margin:0 auto;padding:0 22px}
+.top{padding-top:calc(env(safe-area-inset-top) + 26px)}
+.kick{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);font-weight:600}
+.kick.ac{color:var(--ac)}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+h1{font-size:34px;line-height:1.1;letter-spacing:-.01em;margin:8px 0 0}
+h2{font-size:23px;line-height:1.2}
+.rule{height:1px;background:var(--ln);margin:16px 0 12px;border:0}
+.meta{font-variant-caps:all-small-caps;letter-spacing:.1em;font-size:16px;color:var(--tx2)}
+.alt{display:inline-block;margin-top:12px;font-size:14px;color:var(--tx2);text-decoration:underline;text-decoration-color:var(--ln);text-underline-offset:4px;padding:4px 0}
+.alt:active{color:var(--ac)}
+.hero{position:relative;height:min(54vh,440px);background:var(--soft)}
+.hero img{display:block;width:100%;height:100%;object-fit:cover}
+.hero:after{content:"";position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 50px);background:linear-gradient(rgba(0,0,0,.4),transparent);pointer-events:none}
+.hero.nohero{height:calc(env(safe-area-inset-top) + 24px);background:none}
+.hero.nohero:after{display:none}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:34px 0 4px}
+.hint{font-size:13.5px;color:var(--tx2);margin:2px 0 6px}
+.ing{list-style:none;margin:0;padding:0}
+.ing li{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-top:1px solid var(--ln);cursor:pointer;user-select:none;-webkit-user-select:none}
+.ing li:last-child{border-bottom:1px solid var(--ln)}
+.ing li .t{font-size:16.5px}
+.ing li .ck{flex:none;width:20px;height:20px;stroke:var(--ac);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s}
+.ing li.on .ck{opacity:1}
+.ing li.on .t{color:var(--tx2)}
+.ing li:active{background:var(--soft)}
+.btn{display:block;width:100%;padding:15px;margin-top:20px;background:var(--acb);color:#fff;font-weight:600;font-size:16px;letter-spacing:.02em;border-radius:3px;text-align:center}
+.btn:active{opacity:.85}
+.btn.g{background:none;color:var(--tx);border:1px solid var(--ln)}
+.steps{margin-top:6px}
+.steps .p{display:flex;gap:16px;margin:0 0 22px}
+.steps .n{flex:none;font-family:var(--serif);font-size:26px;line-height:1.2;color:var(--ac);min-width:20px}
+.steps p{margin:0;font-family:var(--serif);font-size:18px;line-height:1.7}
+.src{color:var(--tx2);font-size:12.5px;margin:30px 0 8px;letter-spacing:.04em}
+.lnk{display:inline-block;color:var(--ac);font-size:14px;margin-top:8px;text-underline-offset:4px}
+.day{display:flex;gap:16px;align-items:center;width:100%;text-align:left;padding:14px 0;border-top:1px solid var(--ln)}
+.day:last-of-type{border-bottom:1px solid var(--ln)}
+.day .th{flex:none;width:68px;height:68px;background:var(--soft) center/cover}
+.day .nm{font-family:var(--serif);font-size:19px;line-height:1.2;font-weight:600;margin-top:3px}
+.rule+.day{border-top:0}
+.day:active{background:var(--soft)}
+.back{position:fixed;z-index:25;top:calc(env(safe-area-inset-top) + 10px);left:14px;width:38px;height:38px;border-radius:50%;background:var(--bg);display:grid;place-items:center;box-shadow:0 0 0 1px var(--ln)}
+.back svg{width:20px;height:20px;stroke:var(--tx);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#pDet{z-index:20;background:var(--bg)}
+.msg{padding:40px 0;color:var(--tx2)}
+.msg h3{color:var(--tx);font-size:22px;margin:0 0 8px}
+.sk{height:220px;background:linear-gradient(90deg,var(--soft),transparent,var(--soft));background-size:200% 100%;animation:sk 1.3s linear infinite;margin-bottom:14px}
+@keyframes sk{to{background-position:-200% 0}}
+.add{display:flex;gap:10px;margin:14px 0 4px}
+.add input{flex:1;min-width:0;padding:12px 12px;border:1px solid var(--ln);border-radius:3px;background:none;font-size:16px;outline:0}
+.add input:focus{border-color:var(--ac)}
+.add button{flex:none;padding:0 16px;background:var(--acb);color:#fff;font-weight:600;border-radius:3px}
+.li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid var(--ln);font-size:16.5px}
+.li:last-child{border-bottom:1px solid var(--ln)}
+.li button{flex:none;color:var(--ac);font-size:14px;font-weight:600;padding:4px 0 4px 10px}
+.li button.x{color:var(--tx2);font-size:18px;font-weight:400}
+.empty{color:var(--tx2);font-size:15px;margin:10px 0}
+.set .r{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;text-align:left;padding:16px 0;border-top:1px solid var(--ln);font-size:16.5px}
+.set .r:last-of-type{border-bottom:1px solid var(--ln)}
+.set .r:active{background:var(--soft)}
+.set .r svg{flex:none;width:18px;height:18px;stroke:var(--tx2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.set .r.warn>div{color:var(--ac)}
+.set .r:disabled{opacity:.45;cursor:default}
+.set .r:disabled:active{background:none}
+.set small{display:block;color:var(--tx2);font-size:13px;margin-top:2px}
+.ver{color:var(--tx2);font-size:12.5px;margin-top:18px;letter-spacing:.06em}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--bg);border-top:1px solid var(--ln);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;font-size:10.5px;letter-spacing:.04em;font-weight:600;color:var(--tx2)}
+nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--ac)}
+/* a toast elrejtve a notch/Dynamic Island mögé sem lóg be (v1-ben kilógott) */
+#toast{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:50%;max-width:calc(100% - 40px);transform:translate(-50%,calc(-100% - env(safe-area-inset-top) - 20px));opacity:0;background:var(--tx);color:var(--bg);border-radius:3px;padding:10px 18px;font-weight:600;font-size:14px;z-index:60;transition:transform .3s ease,opacity .3s;text-align:center}
+#toast.on{transform:translate(-50%,0);opacity:1}
+#sp{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99;background:var(--bg);display:grid;place-items:center;transition:opacity .3s}
+#sp.bye{opacity:0;pointer-events:none}
+#sp>div{text-align:center;animation:in .4s ease-out}
+#sp b{font-family:var(--serif);font-weight:600;font-size:38px;letter-spacing:-.01em}
+#sp b i{color:var(--ac);font-style:normal}
+#sp hr{width:44px;height:1px;border:0;background:var(--ac);margin:16px auto 12px}
+#rot{display:none}
+@media(orientation:landscape) and (max-height:500px){#rot{display:grid;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:var(--bg);place-items:center;font-weight:600}}
+</style>
+</head>
+<body>
+<div id="sp"><div><b>Mi lesz ma<i>?</i></b><hr><span class="kick" id="spd"></span></div></div>
+<div id="sb"></div>
+<div id="rot">Fordítsd álló helyzetbe</div>
+<div id="toast"></div>
+<div class="page" id="pMa"></div>
+<div class="page" id="pHet"></div>
+<div class="page" id="pIt"></div>
+<div class="page" id="pSet"></div>
+<div class="page" id="pDet"></div>
+<nav id="nav">
+  <button data-t="Ma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/></svg>Ma</button>
+  <button data-t="Het"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Hét</button>
+  <button data-t="It"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v9H4z"/><path d="M10 20v-5h4v5"/></svg>Itthon</button>
+  <button data-t="Set"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Beállítások</button>
+</nav>
+<script>
+"use strict";
+const VER="Mi lesz ma? v1.1",BASE="https://www.mindmegette.hu",MAXREC=40;
+const $=s=>document.querySelector(s);
+const ld=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MON=["jan.","febr.","márc.","ápr.","máj.","jún.","júl.","aug.","szept.","okt.","nov.","dec."];
+const DAY=["hétfő","kedd","szerda","csütörtök","péntek","szombat","vasárnap"];
+const pad=n=>("0"+n).slice(-2);
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const monday=(d=new Date())=>{const m=new Date(d.getFullYear(),d.getMonth(),d.getDate());m.setDate(m.getDate()-(m.getDay()+6)%7);return m};
+const di=()=>(new Date().getDay()+6)%7; /* ma: hétfő=0 */
+const dayDate=d=>{const m=monday();m.setDate(m.getDate()+d);return m};
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+
+let WEEK=ld("eb.week",null),REC=ld("eb.rec",{}),ALT=ld("eb.alt",{}),PAN=ld("eb.pan",{});
+let tab="Ma",det=null,wkState=WEEK&&WEEK.weekKey===iso(monday())?"ok":"load",wkErr=false;
+const recErr={},pend={};
+
+/* ---------- „Itthon van” kamra ---------- */
+const UNITS="db|dkg|kg|g|dl|l|ml|cl|evőkanál|ek|kávéskanál|kk|teáskanál|tk|csipet|gerezd|csomag|szál|fej|marék|bögre|pohár|szelet|cs|csokor|ág|levél|tasak|doboz|üveg|konzerv";
+const QTY=/^(?:\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?(?:\s*\/\s*\d+)?|[½¼¾⅓⅔⅛])\s*/;
+const UNIT=new RegExp("^(?:"+UNITS+")(?=[\\s.,)]|$)\\.?\\s*","i");
+function nameOf(s){
+  let t=String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/\s+/g," ").trim();
+  t=t.replace(/^kb\.?\s*/,"");
+  let p;do{p=t;t=t.replace(QTY,"")}while(t!==p&&t);
+  t=t.replace(UNIT,"");
+  t=t.replace(/,?\s*ízlés szerint.*$/,"").replace(/\s*,\s*.+$/,"").replace(/[,\s]+$/,"").replace(/^[,\s.]+/,"").trim();
+  return t||String(s||"").toLowerCase().trim();
+}
+function migrate(){ /* a régi receptenkénti pipák egyszeri átvitele a közös kamrába */
+  const old=ld("eb.chk",null);if(old===null)return;
+  const now=Date.now();
+  Object.keys(old).forEach(u=>{const r=REC[u];if(!r)return;(old[u]||[]).forEach(i=>{if(r.ing[i])PAN[nameOf(r.ing[i])]=now})});
+  sv("eb.pan",PAN);try{localStorage.removeItem("eb.chk")}catch(e){}
+}
+migrate();
+const have=n=>!!PAN[n];
+function missList(url){const r=REC[url];return r?r.ing.filter(x=>!have(nameOf(x))):[]}
+function missing(url){return missList(url).length}
+
+/* ---------- toast ---------- */
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),2200)}
+
+/* ---------- adatletöltés ---------- */
+function ldjson(doc){const out=[];doc.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{try{const j=JSON.parse(s.textContent);const f=x=>{if(Array.isArray(x))x.forEach(f);else if(x&&typeof x==="object"){out.push(x);if(x["@graph"])f(x["@graph"])}};f(j)}catch(e){}});return out}
+const hasType=(n,t)=>[].concat(n["@type"]||[]).indexOf(t)>=0;
+
+async function fetchWeek(){
+  const r=await fetch(BASE+"/heti-menu");if(!r.ok)throw new Error("http "+r.status);
+  const doc=new DOMParser().parseFromString(await r.text(),"text/html");
+  const lst=ldjson(doc).find(n=>hasType(n,"ItemList")&&/#itemlist$/.test(n["@id"]||""))||ldjson(doc).find(n=>hasType(n,"ItemList")&&n.itemListElement);
+  if(!lst)throw new Error("nincs lista");
+  const img={};doc.querySelectorAll("a.article-card-wrapper").forEach(a=>{const i=a.querySelector("img"),h=a.getAttribute("href");if(i&&h&&i.getAttribute("src")){const p=h.replace(/^https?:\/\/[^/]+/,"");if(!img[p])img[p]=i.getAttribute("src")}});
+  const items=lst.itemListElement.slice().sort((a,b)=>a.position-b.position).map(x=>{const p=String(x.url).replace(/^https?:\/\/[^/]+/,"");return{url:BASE+p,name:dec(x.name||"").trim(),img:img[p]||""}});
+  if(items.length<14)throw new Error("kevés elem");
+  WEEK={fetchedAt:Date.now(),weekKey:weekOf(doc)||cur(),items};sv("eb.week",WEEK);
+}
+/* a menü hete az oldal fejlécéből („2026. november 23. - 2026. november 29.”) – hétfő reggel még a múlt heti lehet fent */
+const HMON=["január","február","március","április","május","június","július","augusztus","szeptember","október","november","december"];
+function weekOf(doc){
+  const el=doc.querySelector(".date-interval"),m=el&&/(\d{4})\.\s*([a-záéíóöőúüű]+)\s*(\d{1,2})\./i.exec(el.textContent);
+  if(!m)return"";const mo=HMON.indexOf(m[2].toLowerCase());if(mo<0)return"";
+  return iso(monday(new Date(+m[1],mo,+m[3])));
+}
+const cur=()=>iso(monday());
+const fresh=()=>!!(WEEK&&WEEK.weekKey===cur());
+const wkStateNow=()=>fresh()?"ok":(WEEK&&WEEK.fetchedAt>=monday().getTime()?"old":"err");
+async function ensureWeek(force){
+  if(!force&&fresh()&&Date.now()-WEEK.fetchedAt<12*36e5){wkState="ok";return}
+  /* ha a héten már letöltöttük, de még a múlt heti menü volt fent: legfeljebb félóránként nézzük újra */
+  if(!force&&WEEK&&!fresh()&&WEEK.fetchedAt>=monday().getTime()&&Date.now()-WEEK.fetchedAt<18e5){wkState="old";return}
+  if(pend.week)return pend.week;
+  wkState=fresh()?"ok":"load";wkErr=false;
+  return pend.week=fetchWeek().then(()=>{wkState=wkStateNow()}).catch(()=>{wkErr=true;wkState=wkStateNow()}).finally(()=>{pend.week=null});
+}
+function fmtT(m){if(!m)return"";const h=Math.floor(m/60),p=m%60;return h?(p?h+" ó "+p+" p":h+" ó"):p+" p"}
+function isoMin(s){const m=/^P(?:T?)(?:(\d+)H)?(?:(\d+)M)?/.exec(String(s||""));return m?(+m[1]||0)*60+(+m[2]||0):0}
+const dec=t=>String(t).replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&");
+function steps(ins){
+  let paras=[];
+  if(Array.isArray(ins))ins.forEach(x=>{const t=typeof x==="string"?x:(x&&(x.text||x.name))||"";if(t)paras.push(dec(t).trim())});
+  else if(typeof ins==="string"){
+    let t=dec(ins).replace(/^\s*Elkészítés:?\s*/i,"").replace(/\s+/g," ").trim();
+    /* rövidítések utáni pont ne vágjon mondatot */
+    t=t.replace(/\b(kb|ill|pl|db|ev|kk|tk|dkg|dl|kg|stb|vö|ún|nr|max|min)\./gi,"$1\u0001");
+    /* lookbehind nélkül: a régebbi iOS Safari (16.4 előtt) nem ismeri, és az egész szkript elhasalna */
+    const sn=t.replace(/([.!?])\s+(?=[A-ZÁÉÍÓÖŐÚÜŰ0-9„"])/g,"$1\u0002").split("\u0002").map(x=>x.replace(/\u0001/g,"."));
+    let cur="";sn.forEach(x=>{if(cur&&(cur+" "+x).length>230){paras.push(cur);cur=x}else cur=cur?cur+" "+x:x});if(cur)paras.push(cur);
+  }
+  return paras;
+}
+function parseRecipe(html,url){
+  const doc=new DOMParser().parseFromString(html,"text/html");
+  const n=ldjson(doc).find(x=>hasType(x,"Recipe"));if(!n)throw new Error("nincs recept");
+  const ing=(n.recipeIngredient||[]).map(x=>dec(x).replace(/\s+/g," ").trim()).filter(Boolean);
+  if(!ing.length&&!n.recipeInstructions)throw new Error("üres recept");
+  let y=n.recipeYield;if(Array.isArray(y))y=y[0];y=y==null?"":String(y).trim();if(/^\d+$/.test(y))y+=" adag";
+  const im=doc.querySelector("img.recipe-thumbnail"),src=im&&im.getAttribute("src")||"";
+  return{ing,img:/^https:\/\//.test(src)?src:"",steps:steps(n.recipeInstructions),time:isoMin(n.totalTime)||isoMin(n.cookTime),yield:y,t:Date.now()};
+}
+function saveRec(){
+  const ks=Object.keys(REC);
+  if(ks.length>MAXREC){ks.sort((a,b)=>REC[a].t-REC[b].t).slice(0,ks.length-MAXREC).forEach(k=>delete REC[k])}
+  if(!sv("eb.rec",REC)){Object.keys(REC).sort((a,b)=>REC[a].t-REC[b].t).slice(0,10).forEach(k=>delete REC[k]);sv("eb.rec",REC)}
+}
+function ensureRec(url,force){
+  if(!force&&REC[url])return Promise.resolve();
+  if(pend[url])return pend[url];
+  delete recErr[url];
+  return pend[url]=fetch(url).then(r=>{if(!r.ok)throw new Error("http "+r.status);return r.text()}).then(h=>{REC[url]=parseRecipe(h,url);saveRec()}).catch(()=>{recErr[url]=1}).finally(()=>{delete pend[url]});
+}
+
+/* ---------- nézetek ---------- */
+function pick(d){ /* a nap kiválasztott főétele */
+  if(!WEEK||WEEK.weekKey!==iso(monday()))return null;
+  const it=WEEK.items,a=it[4*d+1],b=it[4*d+2],alt=ALT[iso(dayDate(d))];
+  return(alt&&b)?b:a||null;
+}
+const CK='<svg class="ck" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function msgBox(t,s,retry){return'<div class="pad top"><div class="msg"><h3>'+t+'</h3>'+s+(retry?'<button class="btn" data-act="retry">Újra</button>':"")+"</div></div>"}
+const ERRMSG=msgBox("Nem sikerült betölteni a heti menüt","Nincs internet, vagy a Mindmegette nem válaszol.",1);
+const OLDMSG=msgBox("Még nincs fent az e heti menü","A Mindmegettén még a múlt heti menü látszik. Kicsit később újra megnézem.",1);
+const skel='<div class="pad top"><div class="sk"></div><div class="sk" style="height:120px"></div></div>';
+const kickDate=d=>{const x=dayDate(d);return DAY[d]+" · "+MON[x.getMonth()]+" "+x.getDate()+"."};
+/* kép: a heti menü kártyájáról, ha nincs, a recept oldaláról */
+function picOf(it){const r=REC[it.url],s=it.img||(r&&r.img)||"";return/^https:\/\//.test(s)?s:""}
+
+function detailHTML(d){
+  if(wkState==="load")return skel;
+  const it=pick(d);
+  if(!it)return wkState==="old"?OLDMSG:ERRMSG;
+  const url=it.url,r=REC[url];
+  if(!r){
+    if(recErr[url])return msgBox(esc(it.name),"A recept most nem tölthető be.",1);
+    ensureRec(url).then(()=>{redraw()});
+    return skel;
+  }
+  const b=WEEK.items[4*d+2],pi=picOf(it);
+  let h=pi?'<div class="hero"><img src="'+esc(pi)+'" alt="" onerror="var p=this.parentNode;p.className=\'hero nohero\';this.remove();sbar()"></div>':'<div class="hero nohero"></div>';
+  h+='<div class="pad">'+(wkErr?'<p class="hint" style="margin-top:14px">Nem sikerült frissíteni, a legutóbbi mentett adatok látszanak.</p>':"")+
+    '<div class="kick'+(d===di()?" ac":"")+'" style="margin-top:20px">'+esc(kickDate(d))+'</div><h1>'+esc(it.name)+'</h1><hr class="rule">'+
+    '<div class="meta">'+[r.time?fmtT(r.time):"",r.yield].filter(Boolean).map(esc).join(" · ")+'</div>';
+  if(b)h+='<button class="alt" data-act="alt" data-d="'+d+'">'+(ALT[iso(dayDate(d))]?"Vissza az első főételre":"Másik főétel")+"</button>";
+  h+='<div class="sec"><h2>Hozzávalók</h2><span class="kick">Hiányzik: <b class="miss">'+missing(url)+'</b></span></div>'+
+    '<p class="hint">Koppints arra, ami már megvan itthon – minden receptnél megjegyzi.</p>'+
+    '<ul class="ing" data-u="'+esc(url)+'">'+r.ing.map(x=>{const n=nameOf(x);return'<li data-n="'+esc(n)+'" class="'+(have(n)?"on":"")+'"><span class="t">— '+esc(x)+"</span>"+CK+"</li>"}).join("")+"</ul>"+
+    '<button class="btn" data-act="send">Bevásárlólista küldése</button>';
+  if(r.steps.length)h+='<div class="sec"><h2>Elkészítés</h2></div><div class="steps">'+r.steps.map((p,i)=>'<div class="p"><span class="n">'+(i+1)+"</span><p>"+esc(p)+"</p></div>").join("")+"</div>";
+  h+='<a class="lnk" href="'+esc(url)+'" target="_blank" rel="noopener">Megnyitás a Mindmegettén</a><div class="src">Forrás: Mindmegette.hu</div></div>';
+  return h;
+}
+
+function pg(){return det!==null?"#pDet":"#p"+tab}
+function drawAny(){if(det!==null)drawDet();else if(tab==="Ma")drawMa();else if(tab==="Het")drawHet();else if(tab==="It")drawIt();else drawSet()}
+function render(){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  $(pg()).classList.add("on");drawAny();sbar();
+}
+function redraw(){ /* aszinkron betöltés után, a görgetés megtartásával */
+  const p=$(pg()),y=p.scrollTop;drawAny();p.scrollTop=y;sbar();
+}
+/* státuszsáv-háttér: a fotó fölött átlátszó, amint a fotó kigördül vagy nincs fotó, papír/grafit fölött sötét */
+function sbar(){
+  const p=$(pg()),s=$("#sb"),h=p&&p.querySelector(".hero:not(.nohero)");
+  s.classList.toggle("clear",!!h&&p.scrollTop<h.offsetHeight-s.offsetHeight-8);
+}
+document.addEventListener("scroll",sbar,true);
+function drawMa(){$("#pMa").innerHTML=detailHTML(di())}
+function drawDet(){
+  $("#pDet").innerHTML='<button class="back" data-act="back" aria-label="Vissza a hétre"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>'+detailHTML(det);
+}
+const imgTry={};
+function drawHet(){
+  let h='<div class="pad top"><div class="kick">Heti menü</div><h1>Ezen a héten</h1><hr class="rule">';
+  if(wkState==="load")h+='<div class="sk" style="height:96px"></div>'.repeat(5);
+  else if(!pick(0)&&!pick(di()))h+=wkState==="old"?OLDMSG:ERRMSG;
+  else{
+    if(wkErr)h+='<p class="hint">Nem sikerült frissíteni, a legutóbbi mentett adatok látszanak.</p>';
+    for(let d=0;d<7;d++){const it=pick(d);if(!it)continue;const pi=picOf(it),td=d===di();
+      if(!pi&&!REC[it.url]&&!imgTry[it.url]){imgTry[it.url]=1;ensureRec(it.url).then(()=>{if(tab==="Het"&&det===null&&picOf(it))redraw()})}
+      h+='<button class="day" data-act="day" data-d="'+d+'"><div class="th"'+(pi?' style="background-image:url(\''+esc(pi)+'\')"':"")+'></div><div><div class="kick'+(td?" ac":"")+'">'+DAY[d]+(td?" · ma":"")+'</div><div class="nm">'+esc(it.name)+'</div></div></button>'}
+    h+='<div class="src">Forrás: Mindmegette.hu</div>';
+  }
+  $("#pHet").innerHTML=h+"</div>";
+}
+function drawIt(){
+  const keys=Object.keys(PAN).sort((a,b)=>a.localeCompare(b,"hu"));
+  const it=pick(di());let ms="";
+  if(it){
+    const r=REC[it.url];
+    if(!r){if(!recErr[it.url])ensureRec(it.url).then(()=>{if(tab==="It"&&det===null)redraw()});ms='<p class="empty">'+(recErr[it.url]?"A mai recept most nem tölthető be.":"Betöltés…")+"</p>"}
+    else{
+      const seen={},ml=r.ing.map(x=>({x,n:nameOf(x)})).filter(o=>!have(o.n)&&!seen[o.n]&&(seen[o.n]=1));
+      ms=ml.length?ml.map(o=>'<div class="li"><span>'+esc(o.x)+'</span><button data-act="have" data-n="'+esc(o.n)+'">Megvan</button></div>').join(""):'<p class="empty">Minden megvan itthon!</p>';
+    }
+  }else ms='<p class="empty">A mai étel még nem töltődött be.</p>';
+  $("#pIt").innerHTML='<div class="pad top"><div class="kick">Kamra</div><h1>Itthon van</h1><hr class="rule">'+
+    '<p class="hint">Amit itt látsz, az minden receptnél „megvan” jelölést kap.</p>'+
+    '<form class="add" id="addF"><input id="addIn" placeholder="Pl. liszt, tojás…" autocomplete="off" autocapitalize="none" enterkeyhint="done"><button type="submit">Hozzáadás</button></form>'+
+    '<div class="sec"><h2>Mai ételhez hiányzik</h2></div>'+ms+
+    '<div class="sec"><h2>Itthon van</h2><span class="kick">'+keys.length+' db</span></div>'+
+    (keys.length?keys.map(n=>'<div class="li"><span>'+esc(cap(n))+'</span><button class="x" data-act="del" data-n="'+esc(n)+'" aria-label="Törlés">✕</button></div>').join(""):'<p class="empty">Még üres. Koppints egy hozzávalóra a receptnél, vagy írd be fent.</p>')+
+    "</div>";
+}
+function drawSet(){
+  const n=Object.keys(PAN).length,RF='<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5"/></svg>',TR='<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>';
+  $("#pSet").innerHTML='<div class="pad top"><div class="kick">Mi lesz ma?</div><h1>Beállítások</h1><hr class="rule"><div class="set">'+
+    '<button class="r" data-act="ref"><div>Frissítés most<small>'+(WEEK?"Utoljára: "+new Date(WEEK.fetchedAt).toLocaleString("hu-HU",{month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"}):"Még nincs letöltött menü")+"</small></div>"+RF+"</button>"+
+    '<button class="r warn" data-act="clr"'+(n?"":" disabled")+'><div>Itthon lista ürítése<small>'+(n?n+" tétel – utána mind hiányzónak számít":"A lista most üres")+"</small></div>"+TR+"</button></div>"+
+    '<div class="src">Forrás: Mindmegette.hu – az adatok a „Heti menü” oldalról érkeznek, és a telefonon tárolódnak.</div><div class="ver">'+VER+"</div></div>";
+}
+
+/* ---------- bevásárlólista ---------- */
+function listText(url,name){return"Bevásárlólista – "+name+":\n"+missList(url).map(x=>"• "+x).join("\n")}
+function copy(t){if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);return new Promise((ok,no)=>{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy")?ok():no()}catch(e){no()}a.remove()})}
+function sendList(d){
+  const it=pick(d);if(!it||!REC[it.url])return;
+  if(!missing(it.url)){toast("Minden megvan itthon!");return}
+  const text=listText(it.url,it.name);
+  /* tartalék: vágólap, ha az sem megy, SMS-író (iOS: sms:&body=) */
+  const fb=()=>copy(text).then(()=>toast("Kimásolva – illeszd be az üzenetbe"),()=>{location.href="sms:&body="+encodeURIComponent(text)});
+  if(navigator.share)navigator.share({text}).catch(e=>{if(!e||e.name!=="AbortError")fb()});else fb();
+}
+
+/* ---------- események ---------- */
+function setHave(n,on){if(on)PAN[n]=Date.now();else delete PAN[n];sv("eb.pan",PAN)}
+document.addEventListener("click",e=>{
+  const li=e.target.closest(".ing li");
+  if(li){
+    const n=li.dataset.n,on=!have(n);setHave(n,on);
+    document.querySelectorAll(".ing li").forEach(x=>{if(x.dataset.n===n)x.classList.toggle("on",on)});
+    /* minden látott receptlistánál (Ma és a Hét részletnézete) frissül a számláló */
+    document.querySelectorAll(".ing").forEach(u=>{const m=u.closest(".pad").querySelector(".miss");if(m)m.textContent=missing(u.dataset.u)});return;
+  }
+  const a=e.target.closest("[data-act]");if(!a)return;
+  const act=a.dataset.act,d=det!==null?det:di();
+  if(act==="alt"){const k=iso(dayDate(+a.dataset.d));if(ALT[k])delete ALT[k];else ALT[k]=1;sv("eb.alt",ALT);redraw();const u=pick(+a.dataset.d);if(u)ensureRec(u.url).then(redraw)}
+  else if(act==="send")sendList(d);
+  else if(act==="back"){det=null;render()}
+  else if(act==="day"){det=+a.dataset.d;render();$("#pDet").scrollTop=0}
+  else if(act==="retry"){
+    const u=pick(d);
+    if(!u){wkState="load";redraw();ensureWeek(true).then(()=>{redraw()})}
+    else{delete recErr[u.url];redraw();ensureRec(u.url,true).then(redraw)}
+  }
+  else if(act==="have"){setHave(a.dataset.n,true);redraw()}
+  else if(act==="del"){setHave(a.dataset.n,false);redraw()}
+  else if(act==="clr"){if(confirm("Biztosan törlöd az Itthon van listát?")){PAN={};sv("eb.pan",PAN);toast("Itthon lista törölve");redraw()}}
+  /* a mentett recepteket nem töröljük előre: ha nincs net, megmaradnak */
+  else if(act==="ref"){toast("Frissítés…");ensureWeek(true).then(()=>{const u=pick(di());return u?ensureRec(u.url,true).then(()=>!recErr[u.url]):!wkErr}).then(ok=>{toast(ok&&!wkErr?"Frissítve":"Nem sikerült frissíteni");redraw();prefetch()})}
+});
+document.addEventListener("submit",e=>{
+  if(e.target.id!=="addF")return;e.preventDefault();
+  const i=$("#addIn"),n=nameOf(i.value);if(!n)return;
+  setHave(n,true);redraw();const j=$("#addIn");if(j)j.focus();
+});
+$("#nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;det=null;render();$(pg()).scrollTop=0});
+/* nincs nagyítás */
+["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+/* visszatéréskor: új nap / új hét */
+let lastDay=iso(new Date());
+function wake(){
+  /* új nap: vissza a Ma nézetre az elejére; ugyanazon a napon csak frissít, a görgetés (pl. főzés közben) megmarad */
+  const nd=iso(new Date())!==lastDay;
+  if(nd){lastDay=iso(new Date());det=null;pruneAlt()}
+  ensureWeek().then(()=>{if(nd){render();$(pg()).scrollTop=0}else redraw();const u=pick(di());if(u)ensureRec(u.url).then(()=>{if(det===null&&(tab==="Ma"||tab==="It"))redraw()})});
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")wake()});
+setInterval(()=>{if(document.visibilityState==="visible"&&iso(new Date())!==lastDay)wake()},6e4); /* éjfél nyitott appal */
+function pruneAlt(){const m=cur();let ch=0;Object.keys(ALT).forEach(k=>{if(k<m){delete ALT[k];ch=1}});if(ch)sv("eb.alt",ALT)}
+/* a hét hátralévő főételeinek letöltése egymás után – így offline is megvannak, és a Hét fülön is van kép */
+let pfOn=false;
+function prefetch(){
+  if(pfOn||!fresh()||navigator.onLine===false)return;pfOn=true;
+  const q=[];for(let d=di();d<7;d++){const it=pick(d);if(it&&!REC[it.url])q.push(it.url)}
+  const next=()=>{const u=q.shift();if(!u){pfOn=false;return}ensureRec(u).then(()=>{if(tab==="Het"&&det===null)redraw();setTimeout(next,400)})};
+  next();
+}
+
+/* ---------- indulás ---------- */
+pruneAlt();render();
+$("#spd").textContent=kickDate(di());
+setTimeout(()=>{$("#sp").classList.add("bye");setTimeout(()=>$("#sp").remove(),320)},650);
+ensureWeek().then(()=>{redraw();const u=pick(di());return u&&ensureRec(u.url).then(()=>{if(det===null&&(tab==="Ma"||tab==="It"))redraw()})}).then(()=>setTimeout(prefetch,1500));
+if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
