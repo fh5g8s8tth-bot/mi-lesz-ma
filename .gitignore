@@ -8,6 +8,9 @@ graphify-out/
 # Tesztadat (letöltött recepttartalom soha ne kerüljön a repóba)
 test-data/
 
+# Kiszállított csomagok
+*.zip
+
 # Rendszerfájlok
 .DS_Store
 Thumbs.db
